@@ -1,7 +1,11 @@
 package com.example.ui.screens.people
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
@@ -34,19 +39,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.example.data.local.entity.PersonEntity
+import com.example.media.MediaStorageHelper
 import com.example.ui.components.JournalPageSurface
 import com.example.ui.components.PaperPattern
 import com.example.ui.components.PolaroidCard
 import com.example.ui.components.WashiTape
 import com.example.ui.theme.LocalJournalTheme
+import java.io.File
 
 @Composable
 fun PersonProfileScreen(
@@ -56,9 +68,11 @@ fun PersonProfileScreen(
     onBack: () -> Unit
 ) {
     val theme = LocalJournalTheme.current
+    val context = LocalContext.current
 
     var name by remember { mutableStateOf(person?.name ?: "") }
     var nickname by remember { mutableStateOf(person?.nickname ?: "") }
+    var photoUri by remember { mutableStateOf(person?.photoUri ?: "") }
     var howWeMet by remember { mutableStateOf(person?.howWeMet ?: "") }
     var favoriteMemories by remember { mutableStateOf(person?.favoriteMemories ?: "") }
     var insideJokes by remember { mutableStateOf(person?.insideJokes ?: "") }
@@ -67,6 +81,23 @@ fun PersonProfileScreen(
     var favoriteSnack by remember { mutableStateOf(person?.favoriteSnack ?: "") }
     var favoriteFlower by remember { mutableStateOf(person?.favoriteFlower ?: "") }
     var giftIdeas by remember { mutableStateOf(person?.giftIdeas ?: "") }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            val saved = MediaStorageHelper.copyUriToInternalStorage(
+                context = context,
+                uri = uri,
+                subDir = "people_photos",
+                prefix = "person",
+                extension = "jpg"
+            )
+            if (saved != null) {
+                photoUri = saved
+            }
+        }
+    }
 
     JournalPageSurface(
         pageNumber = 8,
@@ -102,6 +133,7 @@ fun PersonProfileScreen(
                                 id = person?.id ?: 0,
                                 name = name.ifBlank { "Someone special" },
                                 nickname = nickname,
+                                photoUri = photoUri,
                                 howWeMet = howWeMet,
                                 favoriteMemories = favoriteMemories,
                                 insideJokes = insideJokes,
@@ -126,28 +158,68 @@ fun PersonProfileScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Polaroid Snapshot at top of profile
+            // Polaroid Snapshot at top of profile - Tapping opens Photo Picker!
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 PolaroidCard(
                     rotation = 1.8f,
                     caption = nickname.ifBlank { name.ifBlank { "someone special" } },
                     hasPaperClip = true,
-                    modifier = Modifier.width(220.dp)
+                    modifier = Modifier
+                        .width(220.dp)
+                        .clickable {
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        }
+                        .testTag("person_profile_polaroid")
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(110.dp)
+                            .height(130.dp)
                             .background(Color(0xFFE8E0D2)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = name.firstOrNull()?.uppercase() ?: "♡",
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 36.sp,
-                            color = Color(0xFF6B5547)
-                        )
+                        if (photoUri.isNotBlank()) {
+                            val photoModel = remember(photoUri) {
+                                if (photoUri.startsWith("content://")) photoUri else File(photoUri)
+                            }
+                            SubcomposeAsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(photoModel)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = name,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = name.firstOrNull()?.uppercase() ?: "♡",
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 32.sp,
+                                    color = Color(0xFF6B5547)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.AddAPhoto,
+                                        contentDescription = "Add Photo",
+                                        tint = Color(0xFF8A7E75),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "tap to add photo",
+                                        fontFamily = FontFamily.Cursive,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF8A7E75)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

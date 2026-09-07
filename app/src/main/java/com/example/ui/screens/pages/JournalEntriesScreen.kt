@@ -423,6 +423,57 @@ fun JournalEntriesScreen(
                                                 color = Color(0xFF5A4D41)
                                             )
 
+                                            // Multimedia badges
+                                            val hasPhoto = entry.imageUris.isNotBlank()
+                                            val hasVoice = entry.voiceNoteUri.isNotBlank()
+                                            val hasVideo = entry.videoUri.isNotBlank()
+                                            val hasHandwriting = entry.doodleData.isNotBlank()
+
+                                            if (hasPhoto || hasVoice || hasVideo || hasHandwriting) {
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    if (hasPhoto) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .background(Color(0xFFEDE5D8), RoundedCornerShape(4.dp))
+                                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        ) {
+                                                            Text("📷 photo", fontFamily = FontFamily.Serif, fontSize = 9.sp, color = Color(0xFF2C2523))
+                                                        }
+                                                    }
+                                                    if (hasHandwriting) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .background(Color(0xFFE8DFD8), RoundedCornerShape(4.dp))
+                                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        ) {
+                                                            Text("✍️ handwritten", fontFamily = FontFamily.Serif, fontSize = 9.sp, color = Color(0xFF2C2523))
+                                                        }
+                                                    }
+                                                    if (hasVoice) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .background(Color(0xFFF3E9DD), RoundedCornerShape(4.dp))
+                                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        ) {
+                                                            Text("🎙️ voice", fontFamily = FontFamily.Serif, fontSize = 9.sp, color = Color(0xFF2C2523))
+                                                        }
+                                                    }
+                                                    if (hasVideo) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .background(Color(0xFFE2DCD5), RoundedCornerShape(4.dp))
+                                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        ) {
+                                                            Text("🎬 video", fontFamily = FontFamily.Serif, fontSize = 9.sp, color = Color(0xFF2C2523))
+                                                        }
+                                                    }
+                                                }
+                                            }
+
                                             Spacer(modifier = Modifier.height(4.dp))
 
                                             Text(

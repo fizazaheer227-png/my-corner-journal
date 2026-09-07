@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -41,6 +42,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
+import java.io.File
 import com.example.data.local.entity.PersonEntity
 import com.example.ui.components.JournalPageSurface
 import com.example.ui.components.PaperPattern
@@ -144,21 +150,36 @@ fun PeopleScrapbookScreen(
                                         .background(Color(0xFFE8E2D5)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            text = person.name.firstOrNull()?.uppercase() ?: "♡",
-                                            fontFamily = FontFamily.Serif,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 32.sp,
-                                            color = Color(0xFF6B5547)
+                                    if (person.photoUri.isNotBlank()) {
+                                        val photoModel = remember(person.photoUri) {
+                                            if (person.photoUri.startsWith("content://")) person.photoUri else File(person.photoUri)
+                                        }
+                                        SubcomposeAsyncImage(
+                                            model = ImageRequest.Builder(LocalContext.current)
+                                                .data(photoModel)
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = person.name,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = person.name,
-                                            fontFamily = FontFamily.Serif,
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF382920)
-                                        )
+                                    } else {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = person.name.firstOrNull()?.uppercase() ?: "♡",
+                                                fontFamily = FontFamily.Serif,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 32.sp,
+                                                color = Color(0xFF6B5547)
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = person.name,
+                                                fontFamily = FontFamily.Serif,
+                                                fontSize = 12.sp,
+                                                color = Color(0xFF382920)
+                                            )
+                                        }
                                     }
                                 }
                             }

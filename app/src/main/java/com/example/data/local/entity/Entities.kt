@@ -37,7 +37,8 @@ data class JournalEntryEntity(
     val taggedPersonName: String = "",
     val isFavorite: Boolean = false,
     val isDraft: Boolean = false,
-    val weatherOrLocation: String = ""
+    val weatherOrLocation: String = "",
+    val videoUri: String = ""
 )
 
 @Entity(tableName = "mood_logs")
@@ -84,7 +85,9 @@ data class MemoryEntity(
     val taggedPersonName: String = "",
     val mood: String = "Happy",
     val isFavorite: Boolean = false,
-    val inJar: Boolean = true
+    val inJar: Boolean = true,
+    val videoUri: String = "",
+    val voiceNoteUri: String = ""
 )
 
 @Entity(tableName = "sticky_notes")

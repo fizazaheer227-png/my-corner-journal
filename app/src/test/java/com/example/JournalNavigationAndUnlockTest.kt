@@ -2,6 +2,7 @@ package com.example
 
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
+import com.example.data.local.AppDatabase
 import com.example.ui.components.JournalTab
 import com.example.viewmodel.JournalViewModel
 import kotlinx.coroutines.Dispatchers
@@ -118,5 +119,23 @@ class JournalNavigationAndUnlockTest {
         // 12 & 13. Try opening again -> Passcode MUST now be requested
         assertTrue(viewModel.isLocked.value)
         assertFalse(viewModel.isJournalOpen.value)
+    }
+
+    @Test
+    fun testReopenAppAfterOnboarding() = runTest(testDispatcher) {
+        val vm1 = JournalViewModel(app)
+        advanceUntilIdle()
+        vm1.completeOnboarding("TestUser", "1234", "Vibrant Palette", "Quote", "Cursive", null, "journal")
+        advanceUntilIdle()
+
+        val vm2 = JournalViewModel(app)
+        advanceUntilIdle()
+        val direct = AppDatabase.getInstance(app).userSettingsDao().getUserSettingsDirect()
+        println("DEBUG DIRECT SETTINGS: $direct")
+        println("DEBUG VM2 USER SETTINGS: ${vm2.userSettings.value}")
+        assertTrue("Settings should be loaded", vm2.isSettingsLoaded.value)
+        assertEquals(true, vm2.userSettings.value?.isOnboardingCompleted)
+        assertTrue("Should be locked on reopen", vm2.isLocked.value)
+        assertFalse("Journal should not be open", vm2.isJournalOpen.value)
     }
 }

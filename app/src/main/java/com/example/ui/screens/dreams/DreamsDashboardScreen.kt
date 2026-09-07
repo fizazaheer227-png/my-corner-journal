@@ -152,33 +152,35 @@ fun DreamsDashboardScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            if (!isDedicatedPage) {
+                Spacer(modifier = Modifier.height(10.dp))
 
-            // Sub tabs strip
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                DreamsSubTab.values().forEach { tab ->
-                    val isSelected = currentSubTab == tab
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = if (isSelected) theme.coverColor else Color(0xFFEDE5D8),
-                                shape = RoundedCornerShape(12.dp)
+                // Sub tabs strip
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    DreamsSubTab.values().forEach { tab ->
+                        val isSelected = currentSubTab == tab
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = if (isSelected) theme.coverColor else Color(0xFFEDE5D8),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .clickable { currentSubTab = tab }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .testTag("dreams_tab_${tab.name.lowercase()}")
+                        ) {
+                            Text(
+                                text = "${tab.emoji} ${tab.label}",
+                                fontFamily = FontFamily.Serif,
+                                fontSize = 12.sp,
+                                color = if (isSelected) Color.White else Color(0xFF2C2523)
                             )
-                            .clickable { currentSubTab = tab }
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                            .testTag("dreams_tab_${tab.name.lowercase()}")
-                    ) {
-                        Text(
-                            text = "${tab.emoji} ${tab.label}",
-                            fontFamily = FontFamily.Serif,
-                            fontSize = 12.sp,
-                            color = if (isSelected) Color.White else Color(0xFF2C2523)
-                        )
+                        }
                     }
                 }
             }

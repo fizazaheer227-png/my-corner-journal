@@ -173,11 +173,12 @@ fun JournalMainScaffold(
                         }
                         "doodle" -> {
                             DoodleCanvasScreen(
-                                onSaveDoodle = {
+                                onSaveDoodle = { doodleDataJson ->
                                     viewModel.saveJournalEntry(
                                         JournalEntryEntity(
                                             title = "doodle sketch 🎨",
-                                            content = "a creative visual page from my doodle book"
+                                            content = "a creative visual page from my doodle book",
+                                            doodleData = doodleDataJson
                                         )
                                     )
                                     viewModel.closeSubScreen()
@@ -228,6 +229,7 @@ fun JournalMainScaffold(
                                     totalMemoriesCount = memories.size,
                                     onSaveSettings = { viewModel.updateSettings(it) },
                                     onLockNow = { viewModel.lockJournal() },
+                                    onResetJournal = { viewModel.resetJournal() },
                                     onBack = { viewModel.closeSubScreen() }
                                 )
                             }
@@ -253,7 +255,7 @@ fun JournalMainScaffold(
                                 unfoldedMemory = unfoldedJarMemory,
                                 onPickMemory = { viewModel.pickRandomJarMemory() },
                                 onPutBack = { viewModel.dismissJarMemory() },
-                                onAddMemory = { t, c, m -> viewModel.addMemory(t, c, m) },
+                                onAddMemory = { t, c, m, p -> viewModel.addMemory(t, c, m, photoUri = p) },
                                 onOpenVault = { viewModel.openSubScreen("memory_vault") },
                                 onBack = { viewModel.closeSubScreen() }
                             )
@@ -461,7 +463,7 @@ fun JournalMainScaffold(
                                         unfoldedMemory = unfoldedJarMemory,
                                         onPickMemory = { viewModel.pickRandomJarMemory() },
                                         onPutBack = { viewModel.dismissJarMemory() },
-                                        onAddMemory = { t, c, m -> viewModel.addMemory(t, c, m) },
+                                        onAddMemory = { t, c, m, p -> viewModel.addMemory(t, c, m, photoUri = p) },
                                         onOpenVault = { viewModel.openSubScreen("memory_vault") }
                                     )
                                 }

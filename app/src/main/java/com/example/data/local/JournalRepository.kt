@@ -347,4 +347,8 @@ class JournalRepository(private val db: AppDatabase) {
             )
         }
     }
+
+    suspend fun clearAllData() = withContext(Dispatchers.IO) {
+        db.clearAllTables()
+    }
 }

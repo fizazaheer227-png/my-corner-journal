@@ -50,6 +50,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.media.HandwritingStroke
+import com.example.media.HandwritingStrokeHelper
 import com.example.ui.components.JournalPageSurface
 import com.example.ui.components.PaperPattern
 import com.example.ui.theme.DarkParchment
@@ -133,7 +135,18 @@ fun DoodleCanvasScreen(
                         Icon(Icons.Default.Clear, contentDescription = "Clear", tint = theme.secondaryTextColor)
                     }
                     Button(
-                        onClick = { onSaveDoodle("Doodle saved to journal") },
+                        onClick = {
+                            val strokes = lines.map { line ->
+                                HandwritingStroke(
+                                    points = line.points,
+                                    color = line.color,
+                                    strokeWidth = line.strokeWidth,
+                                    isEraser = false
+                                )
+                            }
+                            val json = HandwritingStrokeHelper.serializeStrokes(strokes)
+                            onSaveDoodle(json)
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = theme.coverColor),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.testTag("save_doodle_button")

@@ -31,6 +31,9 @@ import com.example.data.local.entity.UserSettingsEntity
 import com.example.data.local.entity.VisionBoardItemEntity
 import com.example.data.local.entity.WishlistItemEntity
 
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+
 @Database(
     entities = [
         UserSettingsEntity::class,
@@ -47,7 +50,7 @@ import com.example.data.local.entity.WishlistItemEntity
         LetterEntity::class,
         LifeCapsuleEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -69,13 +72,21 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE journal_entries ADD COLUMN videoUri TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE memories ADD COLUMN videoUri TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE memories ADD COLUMN voiceNoteUri TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "my_corner_journal.db"
-                ).fallbackToDestructiveMigration().build()
+                ).addMigrations(MIGRATION_1_2).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
+import com.example.data.local.JournalPreferences
 import com.example.data.local.JournalRepository
 import com.example.data.local.entity.FutureCapsuleEntity
 import com.example.data.local.entity.HabitEntity
@@ -32,16 +33,14 @@ import java.util.Locale
 
 class JournalViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository: JournalRepository
-    private var cachedPasscodeHash: String = ""
+    val preferences = JournalPreferences(application)
+    private val repository: JournalRepository = JournalRepository(AppDatabase.getInstance(application))
+    private var cachedPasscodeHash: String = preferences.getSettings().passcodeHash
 
-    init {
-        val db = AppDatabase.getInstance(application)
-        repository = JournalRepository(db)
-    }
-
-    val userSettings: StateFlow<UserSettingsEntity?> = repository.userSettings
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    private val _userSettings = MutableStateFlow<UserSettingsEntity?>(
+        if (preferences.isOnboardingCompleted) preferences.getSettings() else null
+    )
+    val userSettings: StateFlow<UserSettingsEntity?> = _userSettings.asStateFlow()
 
     val allEntries: StateFlow<List<JournalEntryEntity>> = repository.allEntries
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -77,7 +76,9 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // UI Navigation & Locks
-    private val _isLocked = MutableStateFlow(false)
+    private val _isLocked = MutableStateFlow(
+        preferences.isOnboardingCompleted && preferences.getSettings().isPasscodeEnabled && preferences.getSettings().passcodeHash.isNotEmpty()
+    )
     val isLocked = _isLocked.asStateFlow()
 
     private val _isJournalOpen = MutableStateFlow(false)
@@ -130,20 +131,24 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     private val _dailyCornerNote = MutableStateFlow(dailyCornerNotes[0])
     val dailyCornerNote = _dailyCornerNote.asStateFlow()
 
-    private val _isSettingsLoaded = MutableStateFlow(false)
+    private val _isSettingsLoaded = MutableStateFlow(true)
     val isSettingsLoaded = _isSettingsLoaded.asStateFlow()
 
     init {
+        val initialSettings = preferences.getSettings()
         viewModelScope.launch {
-            val settings = repository.getUserSettingsDirect()
-            if (settings != null) {
-                cachedPasscodeHash = settings.passcodeHash
-                if (settings.isPasscodeEnabled && settings.passcodeHash.isNotEmpty()) {
-                    _isLocked.value = true
+            repository.userSettings.collect { roomSettings ->
+                if (roomSettings != null) {
+                    _userSettings.value = roomSettings
+                    cachedPasscodeHash = roomSettings.passcodeHash
+                    preferences.saveSettings(roomSettings)
+                } else if (preferences.isOnboardingCompleted) {
+                    repository.saveUserSettings(preferences.getSettings())
                 }
             }
-            _isSettingsLoaded.value = true
-            repository.seedInitialDataIfNeeded(settings?.userName ?: "Dreamer")
+        }
+        viewModelScope.launch {
+            repository.seedInitialDataIfNeeded(_userSettings.value?.userName ?: initialSettings.userName)
         }
     }
 
@@ -259,31 +264,53 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     ) {
         val hash = if (passcode.isNotEmpty()) hashPasscode(passcode) else ""
         cachedPasscodeHash = hash
+        val newSettings = UserSettingsEntity(
+            id = 1,
+            userName = name.ifBlank { "Dreamer" },
+            passcodeHash = hash,
+            isPasscodeEnabled = hash.isNotEmpty(),
+            autoLockEnabled = true,
+            themeName = themeName,
+            coverQuote = coverQuote.ifBlank { "every little moment counts." },
+            handwritingStyle = handwritingStyle,
+            handwritingSampleUri = handwritingSampleUri,
+            enabledSections = enabledSections,
+            isOnboardingCompleted = true
+        )
+        // 1. Immediately persist synchronously to SharedPreferences
+        preferences.saveSettings(newSettings)
+        _userSettings.value = newSettings
         _isLocked.value = hash.isNotEmpty()
         _isJournalOpen.value = false
+
+        // 2. Persist to Room and seed sample initial data
         viewModelScope.launch {
-            val newSettings = UserSettingsEntity(
-                id = 1,
-                userName = name.ifBlank { "Dreamer" },
-                passcodeHash = hash,
-                isPasscodeEnabled = hash.isNotEmpty(),
-                autoLockEnabled = true,
-                themeName = themeName,
-                coverQuote = coverQuote.ifBlank { "every little moment counts." },
-                handwritingStyle = handwritingStyle,
-                handwritingSampleUri = handwritingSampleUri,
-                enabledSections = enabledSections,
-                isOnboardingCompleted = true
-            )
-            repository.saveUserSettings(newSettings)
-            repository.seedInitialDataIfNeeded(newSettings.userName)
+            try {
+                repository.saveUserSettings(newSettings)
+                repository.seedInitialDataIfNeeded(newSettings.userName)
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun updateSettings(settings: UserSettingsEntity) {
         cachedPasscodeHash = settings.passcodeHash
+        preferences.saveSettings(settings)
+        _userSettings.value = settings
         viewModelScope.launch {
             repository.saveUserSettings(settings)
+        }
+    }
+
+    fun resetJournal() {
+        preferences.clear()
+        _userSettings.value = null
+        _isLocked.value = false
+        _isJournalOpen.value = false
+        cachedPasscodeHash = ""
+        viewModelScope.launch {
+            repository.clearAllData()
         }
     }
 
@@ -540,12 +567,22 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         putMemoryBackInJar()
     }
 
-    fun addMemory(title: String, content: String, mood: String) {
+    fun addMemory(
+        title: String,
+        content: String,
+        mood: String,
+        photoUri: String = "",
+        videoUri: String = "",
+        voiceNoteUri: String = ""
+    ) {
         saveMemory(
             MemoryEntity(
                 title = title,
                 content = content,
-                mood = mood
+                mood = mood,
+                imageUri = photoUri,
+                videoUri = videoUri,
+                voiceNoteUri = voiceNoteUri
             )
         )
     }

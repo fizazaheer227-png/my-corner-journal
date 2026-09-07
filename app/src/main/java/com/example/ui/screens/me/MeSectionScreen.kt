@@ -163,30 +163,32 @@ fun MeSectionScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            if (!isDedicatedPage) {
+                Spacer(modifier = Modifier.height(10.dp))
 
-            // Sub-nav strip
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                MeSubPage.values().forEach { subPage ->
-                    val isSel = currentSubPage == subPage
-                    Box(
-                        modifier = Modifier
-                            .background(if (isSel) theme.coverColor else Color(0xFFEDE5D8), RoundedCornerShape(12.dp))
-                            .clickable { currentSubPage = subPage }
-                            .padding(horizontal = 10.dp, vertical = 5.dp)
-                            .testTag("me_tab_${subPage.name.lowercase()}")
-                    ) {
-                        Text(
-                            text = "${subPage.icon} ${subPage.label}",
-                            fontFamily = FontFamily.Serif,
-                            fontSize = 11.sp,
-                            color = if (isSel) Color.White else Color(0xFF382920)
-                        )
+                // Sub-nav strip
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    MeSubPage.values().forEach { subPage ->
+                        val isSel = currentSubPage == subPage
+                        Box(
+                            modifier = Modifier
+                                .background(if (isSel) theme.coverColor else Color(0xFFEDE5D8), RoundedCornerShape(12.dp))
+                                .clickable { currentSubPage = subPage }
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
+                                .testTag("me_tab_${subPage.name.lowercase()}")
+                        ) {
+                            Text(
+                                text = "${subPage.icon} ${subPage.label}",
+                                fontFamily = FontFamily.Serif,
+                                fontSize = 11.sp,
+                                color = if (isSel) Color.White else Color(0xFF382920)
+                            )
+                        }
                     }
                 }
             }

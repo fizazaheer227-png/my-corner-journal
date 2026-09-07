@@ -70,6 +70,7 @@ fun JournalSettingsScreen(
     totalMemoriesCount: Int,
     onSaveSettings: (UserSettingsEntity) -> Unit,
     onLockNow: () -> Unit,
+    onResetJournal: () -> Unit = {},
     onBack: () -> Unit
 ) {
     val theme = LocalJournalTheme.current
@@ -460,6 +461,42 @@ fun JournalSettingsScreen(
             if (exportFeedback.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(text = exportFeedback, fontFamily = FontFamily.Cursive, fontSize = 14.sp, color = Color(0xFF2E7D32))
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            var showResetDialog by remember { mutableStateOf(false) }
+
+            Button(
+                onClick = { showResetDialog = true },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C)),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth().testTag("reset_journal_button")
+            ) {
+                Text("reset / delete journal & account", fontFamily = FontFamily.Serif, color = Color.White)
+            }
+
+            if (showResetDialog) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { showResetDialog = false },
+                    title = { Text("Reset Journal?", fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold) },
+                    text = { Text("This will permanently clear your local journal entries, memories, and personal settings. You will be taken back to the initial setup.", fontFamily = FontFamily.Serif) },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(
+                            onClick = {
+                                showResetDialog = false
+                                onResetJournal()
+                            }
+                        ) {
+                            Text("Yes, Delete All", color = Color(0xFFB71C1C), fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        androidx.compose.material3.TextButton(onClick = { showResetDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.height(110.dp))

@@ -1,5 +1,14 @@
 package com.example.ui.screens.memories
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
+import com.example.media.MediaStorageHelper
+import java.io.File
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -134,11 +143,12 @@ fun MemoryJarScreen(
     unfoldedMemory: MemoryEntity?,
     onPickMemory: () -> Unit,
     onPutBack: () -> Unit,
-    onAddMemory: (String, String, String) -> Unit,
+    onAddMemory: (String, String, String, String) -> Unit,
     onOpenVault: () -> Unit,
     onBack: (() -> Unit)? = null
 ) {
     val theme = LocalJournalTheme.current
+    val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf("All") }
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -268,6 +278,7 @@ fun MemoryJarScreen(
                             PolaroidMemoryCard(
                                 title = mem.title,
                                 caption = mem.content.ifBlank { mem.title },
+                                photoUri = mem.imageUri,
                                 rotation = if (mem.id % 2 == 0L) 2f else -2f,
                                 tapeColor = Color(0xFFE2A68C)
                             )
@@ -311,11 +322,29 @@ fun MemoryJarScreen(
                     var title by remember { mutableStateOf("") }
                     var caption by remember { mutableStateOf("") }
                     var mood by remember { mutableStateOf("Happy") }
+                    var photoUri by remember { mutableStateOf("") }
+
+                    val photoPicker = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.PickVisualMedia()
+                    ) { uri ->
+                        if (uri != null) {
+                            val saved = MediaStorageHelper.copyUriToInternalStorage(
+                                context = context,
+                                uri = uri,
+                                subDir = "memory_photos",
+                                prefix = "memory",
+                                extension = "jpg"
+                            )
+                            if (saved != null) {
+                                photoUri = saved
+                            }
+                        }
+                    }
 
                     Dialog(onDismissRequest = { showAddDialog = false }) {
                         Box(
                             modifier = Modifier
-                                .width(310.dp)
+                                .width(320.dp)
                                 .shadow(16.dp, RoundedCornerShape(12.dp))
                                 .background(Color(0xFFFAF7F0), RoundedCornerShape(12.dp))
                                 .border(1.dp, Color(0x33000000), RoundedCornerShape(12.dp))
@@ -345,17 +374,41 @@ fun MemoryJarScreen(
                                     minLines = 2,
                                     modifier = Modifier.fillMaxWidth()
                                 )
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                // Photo attach button
+                                Button(
+                                    onClick = {
+                                        photoPicker.launch(
+                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                        )
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (photoUri.isNotBlank()) Color(0xFF8FB9A8) else Color(0xFFEDE5D8),
+                                        contentColor = Color(0xFF2C2523)
+                                    ),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = if (photoUri.isNotBlank()) "✓ Photo Attached 📷" else "📷 Add Real Photo",
+                                        fontFamily = FontFamily.Serif,
+                                        fontSize = 12.sp
+                                    )
+                                }
+
                                 Spacer(modifier = Modifier.height(14.dp))
                                 Button(
                                     onClick = {
                                         if (title.isNotBlank()) {
-                                            onAddMemory(title, caption, mood)
+                                            onAddMemory(title, caption, mood, photoUri)
                                             showAddDialog = false
                                         }
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF24201E))
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF24201E)),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text("save to scrapbook", color = Color(0xFFFBF8F2))
+                                    Text("save to scrapbook ♡", color = Color(0xFFFBF8F2), fontFamily = FontFamily.Serif)
                                 }
                             }
                         }
@@ -370,6 +423,7 @@ fun MemoryJarScreen(
 fun PolaroidMemoryCard(
     title: String,
     caption: String,
+    photoUri: String = "",
     rotation: Float,
     tapeColor: Color
 ) {
@@ -403,7 +457,22 @@ fun PolaroidMemoryCard(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text("📷 ✨", fontSize = 22.sp)
+                if (photoUri.isNotBlank()) {
+                    val photoModel = remember(photoUri) {
+                        if (photoUri.startsWith("content://")) photoUri else File(photoUri)
+                    }
+                    SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(photoModel)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text("📷 ✨", fontSize = 22.sp)
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
