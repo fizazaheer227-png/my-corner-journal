@@ -1,0 +1,48 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Drop shadow for physical depth -->
+    <path
+        android:pathData="M27,33 h54 a4,4 0 0 1 4,4 v46 a4,4 0 0 1 -4,4 h-54 a4,4 0 0 1 -4,-4 v-46 a4,4 0 0 1 4,-4 z"
+        android:fillColor="#254A3B32" />
+    
+    <!-- Journal Cover (Vintage Leather / Craft Paper) -->
+    <path
+        android:pathData="M25,30 h54 a4,4 0 0 1 4,4 v46 a4,4 0 0 1 -4,4 h-54 a4,4 0 0 1 -4,-4 v-46 a4,4 0 0 1 4,-4 z"
+        android:fillColor="#5C4033" />
+
+    <!-- Journal Spine accent line -->
+    <path
+        android:pathData="M31,30 v54"
+        android:strokeColor="#7A5645"
+        android:strokeWidth="2" />
+
+    <!-- Journal Pages block -->
+    <path
+        android:pathData="M33,33 h43 a2,2 0 0 1 2,2 v44 a2,2 0 0 1 -2,2 h-43 z"
+        android:fillColor="#FDFBF7" />
+
+    <!-- Journal inner pages lined texture -->
+    <path
+        android:pathData="M38,42 h32 M38,48 h32 M38,54 h32 M38,60 h24"
+        android:strokeColor="#D7C9B8"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round" />
+
+    <!-- Washi Tape across top-right corner of journal -->
+    <path
+        android:pathData="M60,30 l16,-5 l3,9 l-16,5 z"
+        android:fillColor="#D89D7E" />
+
+    <!-- Bookmark Ribbon extending past bottom edge -->
+    <path
+        android:pathData="M48,31 v48 l4,-4 l4,4 v-48 z"
+        android:fillColor="#A94A42" />
+
+    <!-- Hand-drawn heart stamp on journal cover -->
+    <path
+        android:pathData="M64,66 c-2,-2 -5,-0.5 -5,2 c0,2.5 5,5.5 5,5.5 s5,-3 5,-5.5 c0,-2.5 -3,-4 -5,-2 z"
+        android:fillColor="#D4A373" />
+</vector>
